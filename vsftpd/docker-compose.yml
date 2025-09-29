@@ -1,0 +1,17 @@
+services:
+  vsftpd:
+      image: fauria/vsftpd:latest
+      container_name: vsftpd
+      environment:
+        - FTP_USER=admin
+        - FTP_PASS=admin
+        - PASV_ADDRESS=192.168.0.77
+        - FILE_OPEN_MODE=0777
+      ports:
+        - "21:21"
+        - "21100-21110:21100-21110"
+      volumes:
+        - E:\FTP:/home/vsftpd
+        - .\logs:/var/log/vsftpd
+      restart: unless-stopped
+      
