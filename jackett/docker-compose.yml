@@ -1,0 +1,42 @@
+services: 
+  gluetun: 
+    image: qmcgaw/gluetun 
+    container_name: gluetun 
+    hostname: gluetun 
+    cap_add: 
+      - NET_ADMIN 
+    devices: 
+      - /dev/net/tun:/dev/net/tun 
+    ports: 
+      - 6882:6881 
+      - 6882:6881/udp 
+      - 9117:9117 # Jackett 
+    volumes: 
+      - ./gluetunConfigs:/gluetun 
+    environment: 
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=wireguard
+      - WIREGUARD_ENDPOINT_IP=4.227.246.106
+      - WIREGUARD_ENDPOINT_PORT=51820
+      - WIREGUARD_PUBLIC_KEY=NZbSHkl2Xr2G9/Hb83efq6wJHq28s+fkTmznrB1SsC8=
+      - WIREGUARD_PRIVATE_KEY=aOjgA8c5eKAWVcs/tIRv9i7t2tzMNT92mfRbqcfpMXI=
+      - WIREGUARD_PRESHARED_KEY=RHSAIWuB1EK9pok8XY8e/cebuGT0r97W6UoFRDGeoIA=
+      - WIREGUARD_ADDRESSES=10.8.0.2/24 
+    restart: unless-stopped 
+
+  jackett: 
+    image: lscr.io/linuxserver/jackett:latest 
+    container_name: jackett 
+    network_mode: "service:gluetun" 
+    environment: 
+      - PUID=1000 
+      - PGID=1000 
+      - TZ=Asia/Kolkata 
+      - AUTO_UPDATE=true #optional 
+      - RUN_OPTS= #optional 
+    volumes: 
+      - .\config:/config 
+      - E:\Media\TorrentDownloads:/downloads 
+    restart: unless-stopped 
+
+ 

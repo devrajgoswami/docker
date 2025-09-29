@@ -1,0 +1,19 @@
+services: 
+  qbittorrent: 
+    image: qbittorrentofficial/qbittorrent-nox:latest
+    container_name: qbittorrent 
+    environment: 
+      - PUID=0 
+      - PGID=0 
+      - TZ=Etc/UTC 
+      - WEBUI_PORT=8080 
+    read_only: false 
+    volumes: 
+      - .\config:/config 
+      - E:\Media\TorrentDownloads:/Media/TorrentDownloads 
+    ports: 
+      - 8080:8080 
+      - 6881:6881 
+      - 6881:6881/udp 
+    restart: unless-stopped 
+    privileged: true 
