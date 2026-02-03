@@ -11,6 +11,7 @@ services:
       - 6882:6881 
       - 6882:6881/udp 
       - 9117:9117 # Jackett 
+      - 8191:8191 # flaresolverr
     volumes: 
       - ./gluetunConfigs:/gluetun 
     environment: 
@@ -39,4 +40,14 @@ services:
       - E:\Media\TorrentDownloads:/downloads 
     restart: unless-stopped 
 
- 
+  flaresolverr:
+    # DockerHub mirror flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    network_mode: "service:gluetun"
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+      - TZ=Asia/Kolkata
+    restart: unless-stopped 

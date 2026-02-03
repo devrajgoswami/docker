@@ -16,6 +16,7 @@ echo Updating jackett
 cd /d "..\jackett"
 docker pull qmcgaw/gluetun
 docker pull lscr.io/linuxserver/jackett
+docker pull ghcr.io/flaresolverr/flaresolverr
 docker compose down
 docker compose up -d
 echo jackett updated successfully.
@@ -60,4 +61,5 @@ docker compose down
 docker compose up -d
 echo vsftpd updated successfully.
 echo ------------------------------
+docker image prune -f
 pause
