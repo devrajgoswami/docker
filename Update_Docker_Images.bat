@@ -22,12 +22,12 @@ docker compose up -d
 echo jackett updated successfully.
 echo ------------------------------
 
-echo Updating jellyseerr
-cd /d "..\jellyseerr"
-docker pull ghcr.io/fallenbagel/jellyseerr
+echo Updating seerr
+cd /d "..\seerr"
+docker pull ghcr.io/seerr-team/seerr:latest
 docker compose down
 docker compose up -d
-echo jellyseerr updated successfully.
+echo seerr updated successfully.
 echo ------------------------------
 
 echo Updating qbittorrent
