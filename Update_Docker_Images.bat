@@ -6,7 +6,7 @@ echo ------------------------------
 
 echo Updating jellyfin
 cd jellyfin
-docker pull jellyfin/jellyfin
+docker pull jellyfin/jellyfin:latest
 docker compose down
 docker compose up -d
 echo jellyfin updated successfully.
@@ -14,9 +14,9 @@ echo ------------------------------
 
 echo Updating jackett
 cd /d "..\jackett"
-docker pull qmcgaw/gluetun
-docker pull lscr.io/linuxserver/jackett
-docker pull ghcr.io/flaresolverr/flaresolverr
+docker pull qmcgaw/gluetun:latest
+docker pull lscr.io/linuxserver/jackett:latest
+docker pull ghcr.io/flaresolverr/flaresolverr:latest
 docker compose down
 docker compose up -d
 echo jackett updated successfully.
@@ -32,7 +32,7 @@ echo ------------------------------
 
 echo Updating qbittorrent
 cd /d "..\qbittorrent"
-docker pull qbittorrentofficial/qbittorrent-nox
+docker pull qbittorrentofficial/qbittorrent-nox:latest
 docker compose down
 docker compose up -d
 echo qbittorrent updated successfully.
@@ -40,7 +40,7 @@ echo ------------------------------
 
 echo Updating radarr
 cd /d "..\radarr"
-docker pull lscr.io/linuxserver/radarr
+docker pull lscr.io/linuxserver/radarr:latest
 docker compose down
 docker compose up -d
 echo radarr updated successfully.
@@ -48,18 +48,18 @@ echo ------------------------------
 
 echo Updating sonarr
 cd /d "..\sonarr"
-docker pull lscr.io/linuxserver/sonarr
+docker pull lscr.io/linuxserver/sonarr:latest
 docker compose down
 docker compose up -d
 echo sonarr updated successfully.
 echo ------------------------------
 
-echo Updating vsftpd
-cd /d "..\vsftpd"
-docker pull fauria/vsftpd
+echo Updating filebrowser
+cd /d "..\filebrowser"
+docker pull filebrowser/filebrowser:latest
 docker compose down
 docker compose up -d
-echo vsftpd updated successfully.
+echo filebrowser updated successfully.
 echo ------------------------------
 docker image prune -f
 pause

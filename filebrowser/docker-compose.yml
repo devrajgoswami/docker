@@ -1,0 +1,14 @@
+services:
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: filebrowser
+    ports:
+      - "8082:80"
+    volumes: 
+      - .\config:/config 
+      - E:\Media\:/srv 
+      - .\filebrowser:/database
+    environment:
+      - PUID=1000
+      - PGID=1000
+    restart: unless-stopped
