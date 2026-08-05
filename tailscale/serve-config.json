@@ -1,0 +1,124 @@
+{
+  "Services": {
+    "svc:jellyfin": {
+      "TCP": {
+        "443": {
+          "HTTPS": true
+        }
+      },
+      "Web": {
+        "jellyfin.saola-buri.ts.net:443": {
+          "Handlers": {
+            "/": {
+              "Proxy": "http://host.docker.internal:8096"
+            }
+          }
+        }
+      }
+    },
+    "svc:qbittorrent": {
+      "TCP": {
+        "443": {
+          "HTTPS": true
+        }
+      },
+      "Web": {
+        "qbittorrent.saola-buri.ts.net:443": {
+          "Handlers": {
+            "/": {
+              "Proxy": "http://host.docker.internal:8080"
+            }
+          }
+        }
+      }
+    },
+    "svc:sonarr": {
+      "TCP": {
+        "443": {
+          "HTTPS": true
+        }
+      },
+      "Web": {
+        "sonarr.saola-buri.ts.net:443": {
+          "Handlers": {
+            "/": {
+              "Proxy": "http://host.docker.internal:8989"
+            }
+          }
+        }
+      }
+    },
+    "svc:radarr": {
+      "TCP": {
+        "443": {
+          "HTTPS": true
+        }
+      },
+      "Web": {
+        "radarr.saola-buri.ts.net:443": {
+          "Handlers": {
+            "/": {
+              "Proxy": "http://host.docker.internal:7878"
+            }
+          }
+        }
+      }
+    },
+    "svc:seerr": {
+      "TCP": {
+        "443": {
+          "HTTPS": true
+        }
+      },
+      "Web": {
+        "seerr.saola-buri.ts.net:443": {
+          "Handlers": {
+            "/": {
+              "Proxy": "http://host.docker.internal:5055"
+            }
+          }
+        }
+      }
+    },
+    "svc:filebrowser": {
+      "TCP": {
+        "443": {
+          "HTTPS": true
+        }
+      },
+      "Web": {
+        "filebrowser.saola-buri.ts.net:443": {
+          "Handlers": {
+            "/": {
+              "Proxy": "http://host.docker.internal:8082"
+            }
+          }
+        }
+      }
+    }
+  },
+  "TCP": {
+    "8443": {
+      "HTTPS": true
+    },
+    "8444": {
+      "HTTPS": true
+    }
+  },
+  "Web": {
+    "devraj-pc.saola-buri.ts.net:8443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://host.docker.internal:8096"
+        }
+      }
+    },
+    "devraj-pc.saola-buri.ts.net:8444": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://host.docker.internal:8082"
+        }
+      }
+    }
+  }
+}

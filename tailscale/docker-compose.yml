@@ -1,0 +1,35 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: devraj-pc
+    environment:
+      # Auth key from the Tailscale admin console (must carry tag:server)
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      # Name this machine gets on the tailnet
+      - TS_HOSTNAME=devraj-pc
+      # Where the node identity is persisted (named volume below)
+      - TS_STATE_DIR=/var/lib/tailscale
+      # Reverse-proxy / Services definition
+      - TS_SERVE_CONFIG=/config/serve-config.json
+      # Required so this node is allowed to host Tailscale Services
+      - TS_EXTRA_ARGS=--advertise-tags=tag:server
+      # Userspace networking: no /dev/net/tun, no NET_ADMIN, no host networking.
+      # This is the mode that works reliably on Docker Desktop for Windows.
+      - TS_USERSPACE=true
+      # Apps are reached via host.docker.internal, so MagicDNS inside the
+      # container is not needed.
+      - TS_ACCEPT_DNS=false
+    volumes:
+      # Named volume (not a Windows bind mount) — avoids file-permission
+      # problems with the tailscaled state file.
+      - tailscale-state:/var/lib/tailscale
+      - ./serve-config.json:/config/serve-config.json:ro
+      - ./scripts:/scripts:ro
+    extra_hosts:
+      # Lets the container reach ports published on the Windows host
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+
+volumes:
+  tailscale-state:

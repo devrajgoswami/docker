@@ -4,13 +4,21 @@ echo Images to be updated:
 dir /a:d /b
 echo ------------------------------
 
-echo Updating jellyfin
-cd jellyfin
-docker pull jellyfin/jellyfin:latest
+echo Updating qbittorrent
+cd "qbittorrent"
+docker pull qbittorrentofficial/qbittorrent-nox:latest
 docker compose down
 docker compose up -d
-echo jellyfin updated successfully.
+echo qbittorrent updated successfully.
 echo ------------------------------
+
+@REM echo Updating jellyfin
+@REM cd /d "..\jellyfin"
+@REM docker pull jellyfin/jellyfin:latest
+@REM docker compose down
+@REM docker compose up -d
+@REM echo jellyfin updated successfully.
+@REM echo ------------------------------
 
 echo Updating jackett
 cd /d "..\jackett"
@@ -28,14 +36,6 @@ docker pull ghcr.io/seerr-team/seerr:latest
 docker compose down
 docker compose up -d
 echo seerr updated successfully.
-echo ------------------------------
-
-echo Updating qbittorrent
-cd /d "..\qbittorrent"
-docker pull qbittorrentofficial/qbittorrent-nox:latest
-docker compose down
-docker compose up -d
-echo qbittorrent updated successfully.
 echo ------------------------------
 
 echo Updating radarr
@@ -60,6 +60,17 @@ docker pull filebrowser/filebrowser:latest
 docker compose down
 docker compose up -d
 echo filebrowser updated successfully.
+echo ------------------------------
+
+echo Updating tailscale
+cd /d "..\tailscale"
+docker pull tailscale/tailscale:latest
+REM Note: plain "down" only - never use "down -v" here. The tailscale-state
+REM volume holds the node identity and the advertised-services setting;
+REM wiping it forces a re-auth and a re-advertise.
+docker compose down
+docker compose up -d
+echo tailscale updated successfully.
 echo ------------------------------
 docker image prune -f
 pause

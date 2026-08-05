@@ -1,0 +1,75 @@
+{
+	// ─────────────────────────────────────────────────────
+	// Tag ownership
+	//
+	// "tag:server" — label for the homelab machine.
+	// Only admins (you) can assign this tag to devices.
+	// Required for Tailscale Services — untagged devices
+	// cannot host services.
+	// ─────────────────────────────────────────────────────
+	"tagOwners": {
+		"tag:server": ["autogroup:admin"],
+	},
+
+	// ─────────────────────────────────────────────────────
+	// Access grants
+	//
+	// Members (you, on your own devices) get full access to
+	// everything on the tailnet.
+	//
+	// Shared-in external users get ONLY the machine-level
+	// proxy ports defined in serve-config.json:
+	//   8443 -> Jellyfin
+	//   8444 -> Filebrowser
+	// Do NOT use "*" as src here - per Tailscale docs "*"
+	// also matches invited external users.
+	// ─────────────────────────────────────────────────────
+	"grants": [
+		{
+			"src": ["autogroup:member"],
+			"dst": ["*"],
+			"ip":  ["*"],
+		},
+		{
+			"src": ["autogroup:shared"],
+			"dst": ["tag:server"],
+			"ip":  ["8443", "8444"],
+		},
+	],
+
+	// ─────────────────────────────────────────────────────
+	// Auto-approve services
+	//
+	// When the server (tag:server) advertises a service,
+	// it is approved automatically — no manual click in
+	// the admin console needed.
+	//
+	// Each service maps to a Docker app on localhost.
+	// ─────────────────────────────────────────────────────
+	"autoApprovers": {
+		"services": {
+			"svc:jellyfin":    ["tag:server"],
+			"svc:qbittorrent": ["tag:server"],
+			"svc:sonarr":      ["tag:server"],
+			"svc:radarr":      ["tag:server"],
+			"svc:seerr":       ["tag:server"],
+			"svc:filebrowser": ["tag:server"],
+		},
+	},
+
+	// ─────────────────────────────────────────────────────
+	// Tailscale SSH
+	//
+	// Allow members to SSH into their own devices.
+	// "check" = interactive re-auth via browser on first
+	// connection.
+	// ─────────────────────────────────────────────────────
+	"ssh": [
+		{
+			"action": "check",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+	],
+}
