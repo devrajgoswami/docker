@@ -231,10 +231,12 @@ volume holds the node identity and advertised services; removing it forces a re-
   | `ai-upscaler/.env` | — | AI service API token |
 
 - **Rotate the WireGuard keys.** They were previously hardcoded in
-  [jackett/docker-compose.yml](jackett/docker-compose.yml) and are still in the git
-  history, so treat them as compromised: issue new keys at the VPN provider, write them
-  to `jackett/.env`, and scrub the history (`git filter-repo`) before this repo is
-  pushed or shared.
+  [jackett/docker-compose.yml](jackett/docker-compose.yml) and committed to this
+  repository, which is public. The history has been rewritten so no branch contains
+  them, but GitHub still serves the pre-rewrite commits by SHA until it garbage-collects
+  them, so treat the keys as compromised: issue a new pair at the VPN provider and write
+  them to `jackett/.env`. Ask GitHub Support to purge the unreachable commits (a
+  force-push does not do this).
 - **`PUID=0` / `privileged: true`** in the Radarr, Sonarr, and qBittorrent compose files
   run those containers as root with elevated privileges. Prefer a non-root UID/GID
   (for example `1000:1000`, as Jellyfin and File Browser use) and drop `privileged`
