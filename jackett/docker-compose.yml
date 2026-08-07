@@ -20,8 +20,9 @@ services:
       - WIREGUARD_ENDPOINT_IP=4.227.246.106
       - WIREGUARD_ENDPOINT_PORT=51820
       - WIREGUARD_PUBLIC_KEY=NZbSHkl2Xr2G9/Hb83efq6wJHq28s+fkTmznrB1SsC8=
-      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
-      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
+      # Secrets live in jackett/.env (gitignored) - see .env.example
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY:?set in jackett/.env}
+      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY:?set in jackett/.env}
       - WIREGUARD_ADDRESSES=10.8.0.2/24 
     restart: unless-stopped 
 

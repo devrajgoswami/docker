@@ -1,5 +1,11 @@
-*\logs
-*\config
-*\cache
-/jackett/gluetunConfigs
-/filebrowser/filebrowser
+# Secrets
+.env
+!.env.example
+
+# Service state and runtime data (any depth)
+config/
+cache/
+logs/
+
+/jackett/gluetunConfigs/
+/filebrowser/filebrowser/

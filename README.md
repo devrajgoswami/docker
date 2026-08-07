@@ -111,6 +111,10 @@ What it is used for:
 
 Operational notes:
 
+- The service rejects unauthenticated calls with `403 Forbidden`. The token lives in
+  `ai-upscaler/.env` as `AI_UPSCALER_API_TOKEN` (not committed) and is passed to the
+  container as `API_TOKEN`; the identical value must be set in the plugin's **API
+  Token** field. Setting `API_TOKEN=disable` turns auth off for a trusted LAN.
 - Models are downloaded on demand into the `jellyfin-ai-models` volume; `jellyfin-ai-config`
   holds the API token state and must survive container recreates (never `down -v` here).
 - Named volumes are used instead of a `config/` bind mount because the model cache grows
@@ -172,8 +176,9 @@ docker compose down
 7. **AI Upscaler** — in Jellyfin, add the plugin repository
    `https://raw.githubusercontent.com/Kuschel-code/JellyfinUpscalerPlugin/main/repository-jellyfin.json`,
    install *AI Upscaler* from the catalog, restart Jellyfin, then set the AI Service
-   URL to `http://localhost:5000` (Jellyfin runs natively on this host). The model
-   management web UI is at http://localhost:5000.
+   URL to `http://localhost:5000` (Jellyfin runs natively on this host) and paste the
+   token from `ai-upscaler/.env` into the API Token field. The model management web UI
+   is at http://localhost:5000.
 
 Because Jackett runs on Gluetun's network namespace, Radarr and Sonarr must reach it
 via the host (`http://host.docker.internal:9117`), not by container name.
@@ -215,13 +220,21 @@ volume holds the node identity and advertised services; removing it forces a re-
 
 ## Security notes
 
-- **Rotate the WireGuard keys.** `WIREGUARD_PRIVATE_KEY` and `WIREGUARD_PRESHARED_KEY`
-  are currently hardcoded in [jackett/docker-compose.yml](jackett/docker-compose.yml).
-  Move them into a `.env` file (referenced as `${WIREGUARD_PRIVATE_KEY}`) and treat the
-  existing values as compromised if this folder has ever been shared or committed.
-- **Do not commit secrets.** Add a `.gitignore` covering `.env`, `*/config/`, and
-  `tailscale/.env` before putting this in version control. Service configs contain API
-  keys and credentials.
+- **Secrets live in `.env` files, never in compose.** [.gitignore](.gitignore) excludes
+  every `.env` (and the `config/`, `cache/`, `logs/` state directories) while keeping the
+  `.env.example` templates tracked. Current secret files:
+
+  | File | Template | Holds |
+  |---|---|---|
+  | `jackett/.env` | [jackett/.env.example](jackett/.env.example) | WireGuard private + preshared key |
+  | `tailscale/.env` | [tailscale/.env.example](tailscale/.env.example) | Tailscale auth key |
+  | `ai-upscaler/.env` | — | AI service API token |
+
+- **Rotate the WireGuard keys.** They were previously hardcoded in
+  [jackett/docker-compose.yml](jackett/docker-compose.yml) and are still in the git
+  history, so treat them as compromised: issue new keys at the VPN provider, write them
+  to `jackett/.env`, and scrub the history (`git filter-repo`) before this repo is
+  pushed or shared.
 - **`PUID=0` / `privileged: true`** in the Radarr, Sonarr, and qBittorrent compose files
   run those containers as root with elevated privileges. Prefer a non-root UID/GID
   (for example `1000:1000`, as Jellyfin and File Browser use) and drop `privileged`

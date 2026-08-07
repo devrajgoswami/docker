@@ -21,6 +21,9 @@ services:
       - MAX_CONCURRENT_REQUESTS=4
       - DEFAULT_MODEL=realesrgan-x4
       - LOG_LEVEL=INFO
+      # Same value must be set as the API token in the Jellyfin plugin settings.
+      # Use API_TOKEN=disable to drop auth entirely on a trusted LAN.
+      - API_TOKEN=${AI_UPSCALER_API_TOKEN}
       # Set to false to build TensorRT engines (slow first start, faster inference).
       - SKIP_TENSORRT=true
     restart: 'unless-stopped'
