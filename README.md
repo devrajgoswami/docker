@@ -25,6 +25,7 @@ Remote access is handled by Tailscale — no ports are forwarded on the router.
 | Radarr | [radarr](radarr/docker-compose.yml) | `lscr.io/linuxserver/radarr` | http://localhost:7878 | Movie automation |
 | Sonarr | [sonarr](sonarr/docker-compose.yml) | `lscr.io/linuxserver/sonarr` | http://localhost:8989 | TV automation |
 | Seerr | [seerr](seerr/docker-compose.yml) | `ghcr.io/seerr-team/seerr` | http://localhost:5055 | Request portal |
+| AI Upscaler | [ai-upscaler](ai-upscaler/docker-compose.yml) | `kuscheltier/jellyfin-ai-upscaler` | http://localhost:5000 | AI upscaling service for the Jellyfin Upscaler plugin (NVIDIA CUDA) |
 | File Browser | [filebrowser](filebrowser/docker-compose.yml) | `filebrowser/filebrowser` | http://localhost:8082 | Web file manager for `E:\Media` |
 | Tailscale | [tailscale](tailscale/docker-compose.yml) | `tailscale/tailscale` | — | HTTPS reverse proxy + remote access |
 
@@ -32,6 +33,7 @@ Remote access is handled by Tailscale — no ports are forwarded on the router.
 
 | Port | Service |
 |---|---|
+| 5000 | AI Upscaler |
 | 5055 | Seerr |
 | 6881 (TCP/UDP) | qBittorrent peer traffic |
 | 6882 (TCP/UDP) | Gluetun peer traffic |
@@ -69,11 +71,54 @@ flowchart LR
     qBittorrent --> Downloads[(E:\Media\TorrentDownloads)]
     Downloads --> Media[(E:\Media)]
     Media --> Jellyfin
+    Jellyfin -->|HTTP :5000| Upscaler[AI Upscaler]
+    Upscaler --> GPU[(NVIDIA GPU)]
 ```
 
 Jackett and FlareSolverr have no network stack of their own — they share Gluetun's,
 so all indexer traffic exits through the WireGuard tunnel. If Gluetun stops, those
 two containers lose connectivity entirely (fail-closed).
+
+---
+
+## AI Upscaler
+
+Old DVD rips, SD TV episodes, and 720p files look soft on a 4K TV. The AI Upscaler
+container runs neural-network super-resolution (Real-ESRGAN, SPAN, SwinIR, and ~74
+other ONNX models) on the NVIDIA GPU so that content can be enlarged to HD/4K with
+real detail instead of a blurry stretch.
+
+It is the backend half of the
+[JellyfinUpscalerPlugin](https://github.com/Kuschel-code/JellyfinUpscalerPlugin). The
+plugin itself is tiny and ships no native libraries; it sends frames over HTTP to this
+container, which owns the CUDA/ONNX stack. That split is why the AI runs in Docker
+even though Jellyfin does not — it keeps the GPU inference isolated from the media
+server.
+
+What it is used for:
+
+- **Batch pre-upscaling** — a Jellyfin scheduled task scans the library nightly for
+  files below a resolution threshold and writes an upscaled copy alongside the
+  original (`Movie_upscaled.mkv`). Best quality, and it plays on every client
+  including TVs and phones.
+- **Real-time upscaling during playback** — frames from the web player are enhanced
+  on the fly. Browser-only (Chrome/Edge/Firefox); it falls back to a WebGL sharpening
+  shader if the server cannot keep up with the frame rate.
+- **Artwork upscaling** — a weekly task enlarges low-resolution posters, backdrops,
+  logos, and banners.
+- **Face restoration, film-grain handling, and colour/filter presets** applied as part
+  of the upscale pass.
+
+Operational notes:
+
+- Models are downloaded on demand into the `jellyfin-ai-models` volume; `jellyfin-ai-config`
+  holds the API token state and must survive container recreates (never `down -v` here).
+- Named volumes are used instead of a `config/` bind mount because the model cache grows
+  to several GB.
+- Health and GPU diagnostics: `http://localhost:5000/health` and `/gpu-verify`. The model
+  management web UI is at http://localhost:5000.
+- Batch upscaling saturates the GPU for hours. It is scheduled overnight so it does not
+  compete with Jellyfin's hardware transcoding.
 
 ---
 
@@ -83,7 +128,9 @@ two containers lose connectivity entirely (fail-closed).
 - An `E:\Media` drive (or edit the bind mounts in each compose file)
 - NVIDIA GPU + drivers for Jellyfin hardware transcoding (optional — remove the
   `runtime: nvidia` and `deploy.resources` blocks from
-  [jellyfin/docker-compose.yml](jellyfin/docker-compose.yml) if you do not have one)
+  [jellyfin/docker-compose.yml](jellyfin/docker-compose.yml) if you do not have one).
+  The AI Upscaler also needs it; without an NVIDIA GPU, swap its image for one of the
+  `docker7-intel` / `docker7-amd` / `docker7-cpu` variants
 - A WireGuard VPN subscription for Gluetun
 - A Tailscale account for remote access
 
@@ -122,6 +169,11 @@ docker compose down
    client, then point the root folder at `/Media`.
 5. **Seerr** — connect it to Jellyfin, Radarr, and Sonarr.
 6. **Tailscale** — follow [tailscale/README.md](tailscale/README.md).
+7. **AI Upscaler** — in Jellyfin, add the plugin repository
+   `https://raw.githubusercontent.com/Kuschel-code/JellyfinUpscalerPlugin/main/repository-jellyfin.json`,
+   install *AI Upscaler* from the catalog, restart Jellyfin, then set the AI Service
+   URL to `http://localhost:5000` (Jellyfin runs natively on this host). The model
+   management web UI is at http://localhost:5000.
 
 Because Jackett runs on Gluetun's network namespace, Radarr and Sonarr must reach it
 via the host (`http://host.docker.internal:9117`), not by container name.
@@ -184,6 +236,7 @@ volume holds the node identity and advertised services; removing it forces a re-
 ```
 docker/
 ├── Update_Docker_Images.bat   # pull + recreate every service
+├── ai-upscaler/               # AI upscaling service for the Jellyfin plugin
 ├── filebrowser/
 ├── jackett/                   # gluetun + jackett + flaresolverr
 ├── jellyfin/

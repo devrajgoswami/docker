@@ -1,0 +1,50 @@
+services:
+  ai-upscaler:
+    # NVIDIA CUDA build. Other variants: docker7-intel, docker7-amd,
+    # docker7-vulkan, docker7-cpu (see docs/DOCKER-IMAGES.md upstream).
+    image: kuscheltier/jellyfin-ai-upscaler:docker7
+    container_name: jellyfin-ai-upscaler
+    network_mode: 'bridge'
+    ports:
+      # LAN-exposed so browser clients and the native Jellyfin install can
+      # both reach it. Use 127.0.0.1:5000:5000 to restrict to this host only.
+      - 5000:5000
+    volumes:
+      # Named volumes, not bind mounts: the model cache grows to several GB
+      # and this folder lives under the user profile.
+      - ai-models:/app/models
+      - ai-cache:/app/cache
+      - ai-config:/app/config # holds the managed API tokens, must survive recreates
+    environment:
+      - USE_GPU=true
+      - GPU_DEVICE_ID=0
+      - MAX_CONCURRENT_REQUESTS=4
+      - DEFAULT_MODEL=realesrgan-x4
+      - LOG_LEVEL=INFO
+      # Set to false to build TensorRT engines (slow first start, faster inference).
+      - SKIP_TENSORRT=true
+    restart: 'unless-stopped'
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://localhost:5000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    mem_limit: 8g
+    memswap_limit: 12g
+    cpus: 4.0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  ai-models:
+    name: jellyfin-ai-models
+  ai-cache:
+    name: jellyfin-ai-cache
+  ai-config:
+    name: jellyfin-ai-config
