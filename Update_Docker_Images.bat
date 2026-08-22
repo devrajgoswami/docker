@@ -54,14 +54,6 @@ docker compose up -d
 echo sonarr updated successfully.
 echo ------------------------------
 
-echo Updating ai-upscaler
-cd /d "..\ai-upscaler"
-docker pull kuscheltier/jellyfin-ai-upscaler:docker7
-docker compose down
-docker compose up -d
-echo ai-upscaler updated successfully.
-echo ------------------------------
-
 echo Updating filebrowser
 cd /d "..\filebrowser"
 docker pull filebrowser/filebrowser:latest

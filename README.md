@@ -1,8 +1,13 @@
 # Home Media Server
 
-A self-hosted media stack running on Docker Desktop for Windows. Each service lives
-in its own folder with its own `docker-compose.yml` and a local `config/` bind mount,
-so services can be started, stopped, and updated independently.
+A self-hosted media stack running on Docker Desktop for Windows. Each active service
+lives in its own folder with its own `docker-compose.yml` and a local `config/` bind
+mount, so services can be started, stopped, and updated independently.
+
+The current stack includes qBittorrent, Jackett, Seerr, Radarr, Sonarr, File Browser,
+and Tailscale. Run `Update_Docker_Images.bat` from this directory to pull the latest
+images and recreate each service. Tailscale's persistent state volume is preserved
+during updates so its node identity and advertised services are not lost.
 
 Media lives on `E:\Media`; torrent downloads land in `E:\Media\TorrentDownloads`.
 Remote access is handled by Tailscale — no ports are forwarded on the router.
