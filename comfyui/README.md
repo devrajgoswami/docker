@@ -115,14 +115,23 @@ Download these into the matching folders (use browser or `huggingface-cli`):
 
 Optional CLI approach:
 ```powershell
-pip install -U huggingface_hub
-huggingface-cli login
-huggingface-cli download comfyanonymous/flux_text_encoders t5xxl_fp8_e4m3fn.safetensors --local-dir .\basedir\models\clip
-huggingface-cli download comfyanonymous/flux_text_encoders clip_l.safetensors --local-dir .\basedir\models\clip
-huggingface-cli download black-forest-labs/FLUX.1-dev ae.safetensors --local-dir .\basedir\models\vae
-huggingface-cli download Kijai/flux-fp8 flux1-dev-fp8.safetensors --local-dir .\basedir\models\unet
+pip install -U "huggingface_hub[cli,hf_xet]<1.0"
+hf auth login
+hf download comfyanonymous/flux_text_encoders t5xxl_fp8_e4m3fn.safetensors --local-dir .\basedir\models\clip
+hf download comfyanonymous/flux_text_encoders clip_l.safetensors --local-dir .\basedir\models\clip
+hf download black-forest-labs/FLUX.1-dev ae.safetensors --local-dir .\basedir\models\vae
+hf download Kijai/flux-fp8 flux1-dev-fp8.safetensors --local-dir .\basedir\models\unet
 ```
-(Verify exact repo/filenames on Hugging Face at download time — repacked fp8 versions move between repos occasionally.)
+
+Notes:
+- `huggingface-cli` is retired; the command is now `hf`. Pin `huggingface_hub` below
+  1.0 if `transformers` or `tokenizers` share the same environment, as they require it.
+- `ae.safetensors` is gated. Accept the licence at the FLUX.1-dev repo page first, or
+  the download returns 403. The other three files are open.
+- `hf download` leaves a `.cache` folder beside each file that duplicates the download.
+  Delete `basedir/models/*/.cache` afterwards to reclaim the space.
+- Verify exact repo/filenames on Hugging Face at download time — repacked fp8 versions
+  move between repos occasionally.
 
 Models can also be fetched from inside the web UI via ComfyUI Manager's Model Manager,
 which writes straight into `basedir/models`.
@@ -158,7 +167,9 @@ service in this repository rather than binding it to `0.0.0.0`.
 1. In ComfyUI, click the folder/load icon (or drag-and-drop).
 2. Load `flux_txt2img_workflow.json` from this folder.
 3. Edit the `CLIPTextEncode` node's text to your prompt.
-4. Click **Queue Prompt**. First run compiles CUDA kernels and is slower; subsequent runs are much faster (~5–15s per 1024x1024 image on a 5080).
+4. Click **Queue Prompt**. The first run loads 11 GB of weights and compiles CUDA
+   kernels, so it takes a few minutes. Measured on this machine, a warm run at
+   1024x1024 and 20 steps takes about 17 s.
 
 Generated images land in `basedir/output/`. Docker Desktop currently assigns about
 30.1 GiB of system RAM to its Linux VM. That is sufficient for this FP8 setup; if model
