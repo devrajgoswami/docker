@@ -1,0 +1,31 @@
+services:
+  comfyui:
+    image: mmartial/comfyui-nvidia-docker:ubuntu24_cuda12.9-latest
+    container_name: comfyui
+    restart: unless-stopped
+    ports:
+      # Localhost only: ComfyUI has no authentication of its own.
+      - "127.0.0.1:8188:8188"
+    environment:
+      - WANTED_UID=1000
+      - WANTED_GID=1000
+      - BASE_DIRECTORY=/basedir
+      - SECURITY_LEVEL=normal
+      - USE_UV=true
+    volumes:
+      # ComfyUI source + Python venv. A named volume keeps these on the Linux
+      # filesystem; a Windows bind mount breaks venv permissions and is slow.
+      - comfyui-run:/comfy/mnt
+      # User files: models, input, output, user, custom_nodes.
+      - ./basedir:/basedir
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ipc: host
+
+volumes:
+  comfyui-run:

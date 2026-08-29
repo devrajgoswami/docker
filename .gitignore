@@ -9,3 +9,6 @@ logs/
 
 /jackett/gluetunConfigs/
 /filebrowser/filebrowser/
+
+# ComfyUI models, inputs, and generated images (multi-GB)
+/comfyui/basedir/

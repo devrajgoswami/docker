@@ -72,5 +72,18 @@ docker compose down
 docker compose up -d
 echo tailscale updated successfully.
 echo ------------------------------
+
+REM ----- Non media-server services -----
+
+echo Updating comfyui
+cd /d "..\comfyui"
+REM Tag is pinned: Blackwell needs CUDA 12.8+, and a CUDA change rebuilds the venv.
+REM Never use "down -v" here - the comfyui-run volume holds ComfyUI and PyTorch.
+docker pull mmartial/comfyui-nvidia-docker:ubuntu24_cuda12.9-latest
+docker compose down
+docker compose up -d
+echo comfyui updated successfully.
+echo ------------------------------
+
 docker image prune -f
 pause
