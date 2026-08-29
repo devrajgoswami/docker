@@ -182,7 +182,142 @@ memory limit.
 
 ---
 
-## 6. (Optional) Friendlier prompt-box UI
+## 6. Adding a new model
+
+### Where files go
+
+The folder decides which node can see a file. Everything lives under
+`C:\Users\devra\docker\comfyui\basedir\models\`.
+
+| Model type | Folder | Loader node |
+|---|---|---|
+| All-in-one checkpoint (SDXL, SD 3.5) | `checkpoints` | `CheckpointLoaderSimple` |
+| Diffusion model / UNet only (FLUX, Qwen, Z-Image) | `unet` | `UNETLoader` |
+| Text encoder | `clip` | `CLIPLoader`, `DualCLIPLoader` |
+| VAE | `vae` | `VAELoader` |
+| LoRA | `loras` | `LoraLoader`, `LoraLoaderModelOnly` |
+| Upscaler | `upscale_models` | `UpscaleModelLoader` |
+| CLIP vision | `clip_vision` | `CLIPVisionLoader` |
+| Textual inversion | `embeddings` | prompt syntax: `embedding:name` |
+
+Some folders ComfyUI supports do not exist here yet, notably `controlnet`,
+`diffusion_models`, and `text_encoders`. Create the folder yourself if a model needs
+one, then re-apply ownership (see below).
+
+### Three ways to install
+
+**A. ComfyUI Manager (easiest).** In the web UI, click **Manager** → **Model
+Manager**, search, and install. It picks the correct folder automatically and handles
+gated repos if a token is configured.
+
+**B. Command line.** Best for large or gated files, because it resumes:
+
+```powershell
+cd C:\Users\devra\docker\comfyui
+hf download <repo-id> <filename> --local-dir .\basedir\models\<folder>
+```
+
+**C. Copy the file in** to the matching folder with Explorer.
+
+### After installing
+
+1. Delete the `.cache` folder that `hf download` leaves behind (see section 7).
+2. In the web UI press **R**, or click **Refresh**, to repopulate the dropdowns. No
+   container restart is needed.
+3. If a loader dropdown stays empty, the file is in the wrong folder or unreadable.
+   Re-apply ownership:
+   ```powershell
+   docker run --rm -v C:\Users\devra\docker\comfyui\basedir:/basedir alpine chown -R 1000:1000 /basedir
+   ```
+
+### Wiring it into a workflow
+
+A new model usually needs a different graph, not just a different filename in the
+dropdown. Two mismatches cause most errors:
+
+- **Checkpoints bundle model + CLIP + VAE.** A single `CheckpointLoaderSimple`
+  replaces `UNETLoader`, `DualCLIPLoader`, and `VAELoader` together. Loading an SDXL
+  checkpoint into `UNETLoader` will not work.
+- **The empty-latent node must match the model family.** `EmptySD3LatentImage` is
+  16-channel and is used by FLUX, SD3, and Qwen. SDXL and SD 1.5 need
+  `EmptyLatentImage`, which is 4-channel. Mixing them produces the shape-mismatch
+  errors described in section 9.
+
+Sampler settings differ too. FLUX.1-dev is guidance-distilled and runs at `cfg 1.0`
+with `FluxGuidance`, so its negative prompt is inert. SDXL and SD 3.5 use a real
+`cfg` around 5-8 and honour negative prompts.
+
+The reliable shortcut is **Workflow → Browse Templates**. The install ships correct,
+ready-made graphs for the models it supports, and Manager offers to download whatever
+weights are missing. Start from a template rather than rewiring by hand.
+
+---
+
+## 7. Housekeeping and disk cleanup
+
+Check current usage first:
+
+```powershell
+docker exec comfyui du -sh /comfy/mnt/uv_cache /comfy/mnt/venv /comfy/mnt/ComfyUI /comfy/mnt/HF
+docker system df
+```
+
+### Safe to delete
+
+**Hugging Face download caches.** `hf download` writes a `.cache` folder next to each
+file holding a second full copy of the model. This is the single biggest easy win —
+it roughly doubles the size of every download until removed:
+
+```powershell
+cd C:\Users\devra\docker\comfyui
+Get-ChildItem .\basedir\models -Recurse -Directory -Filter '.cache' | Remove-Item -Recurse -Force
+```
+
+**ComfyUI scratch space.** Preview and intermediate files:
+
+```powershell
+Get-ChildItem .\basedir\temp -File -Recurse | Remove-Item -Force
+```
+
+**The uv package cache.** It reached 8.3 GB here after the PyTorch install. It is
+rebuilt automatically on the next package install:
+
+```powershell
+docker exec comfyui rm -rf /comfy/mnt/uv_cache
+```
+
+Note that this frees less than its reported size. uv hardlinks packages from the cache
+into the venv, so large libraries carry two links and the data survives until both are
+gone. Clearing the cache is safe — it never breaks the venv — but measure the real
+gain with `docker system df` rather than trusting the `du` figure.
+
+**Dangling Docker images:**
+
+```powershell
+docker image prune -f
+```
+
+### Not worth deleting
+
+- **The empty folders in `basedir/models`.** They are ComfyUI's standard layout, cost
+  no space, and the container recreates them from ComfyUI's own `models/` tree on the
+  next start. They also document where each model type belongs.
+- **`basedir/user`.** Small, and holds the ComfyUI database, saved workflows, settings,
+  and Manager cache.
+
+### Never do this
+
+- **`docker compose down -v`** destroys the `comfyui-run` volume, forcing a multi-GB
+  reinstall of ComfyUI and PyTorch.
+- **`docker volume prune`** operates on the whole machine, not just this stack. Other
+  services in this repository keep state in volumes, and Tailscale's holds its node
+  identity.
+- **Deleting `basedir/models` contents** to save space. All four FLUX files are
+  required; re-downloading is about 16 GB.
+
+---
+
+## 8. (Optional) Friendlier prompt-box UI
 
 If you want a single text box instead of node graphs:
 - **SwarmUI**: connects to your existing ComfyUI backend, gives a simple prompt/generate UI. Can run alongside in another container or natively on Windows pointing at `http://localhost:8188`.
@@ -190,7 +325,7 @@ If you want a single text box instead of node graphs:
 
 ---
 
-## 7. Common issues
+## 9. Common issues
 
 - **`ERROR: Directory /comfy/mnt not found`**: the run volume is not mounted. The image
   needs `/comfy/mnt` plus a `BASE_DIRECTORY`; mounting paths inside `ComfyUI/` instead
