@@ -30,7 +30,11 @@ because its CUDA runtime is supplied by the container.
 ## 0. Files in this folder
 - `docker-compose.yml` — runs ComfyUI with GPU passthrough
 - `setup-folders.ps1` — creates the model/output folder structure and fixes ownership
-- `flux_txt2img_workflow.json` — a ready-to-load text-to-image workflow
+- `flux_txt2img_workflow.json` — graph workflow to load in the browser UI
+- `flux_txt2img_api.json` — the same graph in API format, for `POST /prompt`
+
+The two workflow files are not interchangeable. The UI loads the graph format; the
+`/prompt` endpoint accepts only the API format.
 
 The image tag is pinned to `ubuntu24_cuda12.9-latest`. Blackwell (RTX 50-series)
 requires `ubuntu24_cuda12.8` or newer, and pinning avoids `latest` silently moving to
@@ -197,6 +201,14 @@ If you want a single text box instead of node graphs:
 - **`Found Max driver CUDA version:` is blank, followed by `integer expression
   expected`**: harmless. Recent `nvidia-smi` prints `CUDA UMD Version` rather than
   `CUDA Version`, so the init script's parser comes up empty. Startup continues.
+- **`mat1 and mat2 shapes cannot be multiplied (77x768 and 4096x3072)`**: the text
+  encoder is wrong for FLUX. `77x768` is CLIP-L alone, but FLUX's `txt_in` layer
+  expects T5-XXL's 4096-dim output. Use `DualCLIPLoader` with `t5xxl_fp8_e4m3fn` +
+  `clip_l` and type `flux`, not a single `CLIPLoader`. This usually means a workflow
+  built for another model (Z-Image, Lumina, SD3) had FLUX files selected in it.
+- **Workflow will not load in the browser**: check you are opening
+  `flux_txt2img_workflow.json` and not `flux_txt2img_api.json`. The API format has no
+  node positions and is meant for `POST /prompt`.
 - **OOM / CUDA out of memory**: use the fp8 unet (already default here) or drop to `1024x1024` → `768x768`. GGUF-quantized Flux (Q8/Q6) is also viable via the `ComfyUI-GGUF` custom node if fp8 is still tight.
 - **`nvidia-smi` not found in container**: Docker Desktop GPU support isn't enabled — recheck step 1.
 - **Slow first generation**: normal, PyTorch/CUDA graph compilation on first run.
