@@ -1,5 +1,13 @@
 # Local Image Generation — ComfyUI + FLUX.1-dev on Docker
 
+> **SwarmUI is the primary UI for image generation and editing:
+> http://localhost:7801.** It offers a prompt box, a model dropdown, and an image
+> editor, and it shares this folder's models. See [../swarmui/README.md](../swarmui/README.md).
+>
+> Use ComfyUI directly when you want to build node graphs by hand. Both apps read
+> models from `comfyui/basedir/models`, so anything downloaded in one appears in the
+> other.
+
 This setup runs **FLUX.1-dev** with FP8 weights in ComfyUI through Docker Desktop.
 FP8 is appropriate for this machine's 16 GB GPU; model quality and behavior are not
 intended to reproduce any specific hosted image service.
@@ -317,11 +325,15 @@ docker image prune -f
 
 ---
 
-## 8. (Optional) Friendlier prompt-box UI
+## 8. Simpler prompt-box UI
 
-If you want a single text box instead of node graphs:
-- **SwarmUI**: connects to your existing ComfyUI backend, gives a simple prompt/generate UI. Can run alongside in another container or natively on Windows pointing at `http://localhost:8188`.
-- **Fooocus**: simpler standalone, but has its own model management (less flexible with raw Flux fp8 setups than SwarmUI/ComfyUI).
+**SwarmUI is already installed for this** at http://localhost:7801 — a prompt box, a
+model dropdown, an image editor for inpainting and photo edits, and automatic workflow
+building for whichever model you select. It shares this folder's models. See
+[../swarmui/README.md](../swarmui/README.md).
+
+Fooocus is the other well-known simple UI, but it is SDXL-only, cannot load FLUX, and
+is no longer actively maintained, so it would strand these weights.
 
 ---
 

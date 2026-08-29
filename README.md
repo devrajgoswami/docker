@@ -9,7 +9,7 @@ The stacks fall into two unrelated groups:
 | Group | Services | Purpose |
 |---|---|---|
 | [Home Media Server](#home-media-server) | qBittorrent, Jackett, FlareSolverr, Gluetun, Radarr, Sonarr, Seerr, File Browser, Tailscale | Acquire, organise, and stream media |
-| [Other Services](#other-services) | ComfyUI | Everything unrelated to the media server |
+| [Other Services](#other-services) | SwarmUI, ComfyUI | Everything unrelated to the media server |
 
 Shared setup, update, and security guidance is in
 [Common operations](#common-operations).
@@ -125,31 +125,43 @@ service only gets its own top-level section if it grows large enough to need one
 
 | Service | Folder | Image | Local URL | Purpose |
 |---|---|---|---|---|
-| ComfyUI | [comfyui](comfyui/docker-compose.yml) | `mmartial/comfyui-nvidia-docker` | http://localhost:8188 | Local text-to-image generation (FLUX.1-dev) |
+| SwarmUI | [swarmui](swarmui/docker-compose.yml) | built from source | http://localhost:7801 | **Primary image generation and editing UI** |
+| ComfyUI | [comfyui](comfyui/docker-compose.yml) | `mmartial/comfyui-nvidia-docker` | http://localhost:8188 | Node-graph editor for custom workflows |
 
-### ComfyUI
+### Image generation
 
-A node-based diffusion UI running FLUX.1-dev with FP8 weights, sized for the 16 GB
-RTX 5080. Full setup, model downloads, and troubleshooting live in
-[comfyui/README.md](comfyui/README.md).
+**Start at SwarmUI: http://localhost:7801.** It gives a prompt box, a model dropdown,
+and a built-in image editor for inpainting and photo edits, with its own ComfyUI
+backend doing the work. Full instructions are in [swarmui/README.md](swarmui/README.md).
+
+ComfyUI remains available at http://localhost:8188 for hand-built node graphs. The two
+**share one models folder** (`comfyui/basedir/models`), so a model downloaded in either
+appears in both and the 16 GB of FLUX weights is stored once.
+
+| Port | Service |
+|---|---|
+| 7801 | SwarmUI |
+| 8188 | ComfyUI |
 
 Points that differ from the media services:
 
-- **Bound to `127.0.0.1:8188`, not `0.0.0.0`.** ComfyUI has no authentication of its
-  own, so it is deliberately *not* published to the tailnet. Add it to
+- **Both are bound to `127.0.0.1`, not `0.0.0.0`.** Neither has authentication, so
+  neither is published to the tailnet. Add them to
   [tailscale/serve-config.json](tailscale/serve-config.json) only if you accept that
   anyone on the tailnet gets unauthenticated access to the GPU and filesystem.
-- **No `config/` directory.** The ComfyUI source and its Python virtual environment
-  live in the `comfyui-run` named volume, because a Python venv on a Windows bind
-  mount is slow and breaks on permissions. User files (models, input, output,
-  custom_nodes) are in `comfyui/basedir/`, which is the part worth backing up.
-- **The container runs as UID/GID 1000** and refuses to start if a mount is owned by
-  anyone else. [comfyui/setup-folders.ps1](comfyui/setup-folders.ps1) creates the
-  folders and applies the required ownership.
-- **First start takes a long time** — a ~19 GB image plus a multi-GB PyTorch/CUDA
-  install. It is ready when the log prints `To see the GUI go to: http://0.0.0.0:8188`.
+- **No `config/` directories.** Application code and Python environments live in named
+  volumes, because a Python venv on a Windows bind mount is slow and breaks on
+  permissions. The parts worth backing up are `comfyui/basedir/` (models, outputs) and
+  `swarmui/Output/`.
+- **Both containers run as UID/GID 1000** and refuse to start if a mount is owned by
+  anyone else. New Docker volumes start root-owned; each service README documents the
+  `chown` fix.
+- **SwarmUI builds from source.** There is no published image, so `swarmui/SwarmUI/` is
+  an upstream git clone, gitignored and compiled by `docker compose build`.
+- **They share models but not VRAM.** Running large generations in both at once will
+  contend for the 16 GB on the GPU. Use one at a time.
 - **Model weights are not included.** FLUX.1-dev requires a Hugging Face account and
-  licence acceptance; see the ComfyUI README.
+  licence acceptance; see [comfyui/README.md](comfyui/README.md).
 
 ---
 
@@ -231,17 +243,18 @@ force a full multi-GB reinstall of ComfyUI and PyTorch.
 ```
 docker/
 ├── Update_Docker_Images.bat   # pull + recreate every service
-├── comfyui/                   # ComfyUI + FLUX.1-dev (not media related)
+├── comfyui/                   # ComfyUI + FLUX.1-dev, shared models folder
 ├── filebrowser/
 ├── jackett/                   # gluetun + jackett + flaresolverr
 ├── qbittorrent/
 ├── radarr/
 ├── seerr/
 ├── sonarr/
+├── swarmui/                   # primary image generation UI (not media related)
 └── tailscale/
 ```
 
 Each media service folder holds a `docker-compose.yml` and a `config/` directory that
 is bind-mounted into the container. Those `config/` directories are the ones worth
-backing up, along with `comfyui/basedir/`.
+backing up, along with `comfyui/basedir/` and `swarmui/Output/`.
 

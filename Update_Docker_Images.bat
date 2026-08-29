@@ -75,6 +75,18 @@ echo ------------------------------
 
 REM ----- Non media-server services -----
 
+echo Updating swarmui
+cd /d "..\swarmui"
+REM SwarmUI builds from its own source checkout rather than a published image.
+REM Never use "down -v" here - the swarmui-* volumes hold the ComfyUI backend,
+REM its Python environment, and all settings.
+git -C SwarmUI pull
+docker compose build
+docker compose down
+docker compose up -d
+echo swarmui updated successfully.
+echo ------------------------------
+
 echo Updating comfyui
 cd /d "..\comfyui"
 REM Tag is pinned: Blackwell needs CUDA 12.8+, and a CUDA change rebuilds the venv.

@@ -1,0 +1,39 @@
+services:
+  swarmui:
+    image: swarmui
+    container_name: swarmui
+    build:
+      context: ./SwarmUI
+      dockerfile: launchtools/StandardDockerfile.docker
+      args:
+        UID: 1000
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+    ports:
+      # Localhost only: SwarmUI has no authentication by default.
+      - "127.0.0.1:7801:7801"
+    volumes:
+      - swarmui-data:/SwarmUI/Data
+      - swarmui-backend:/SwarmUI/dlbackend
+      - swarmui-dlnodes:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes
+      - swarmui-extensions:/SwarmUI/src/Extensions
+      - swarmui-workflows:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows
+      # Shared with ComfyUI so the FLUX weights are not downloaded twice.
+      - ../comfyui/basedir/models:/SwarmUI/Models
+      - ./Output:/SwarmUI/Output
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  swarmui-data:
+  swarmui-backend:
+  swarmui-dlnodes:
+  swarmui-extensions:
+  swarmui-workflows:

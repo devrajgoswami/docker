@@ -12,3 +12,7 @@ logs/
 
 # ComfyUI models, inputs, and generated images (multi-GB)
 /comfyui/basedir/
+
+# SwarmUI: upstream source clone and generated images
+/swarmui/SwarmUI/
+/swarmui/Output/
