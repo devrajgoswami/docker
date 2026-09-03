@@ -219,6 +219,24 @@ advertised services; removing it forces a re-auth.
 The same applies to `comfyui`: `down -v` would delete the `comfyui-run` volume and
 force a full multi-GB reinstall of ComfyUI and PyTorch.
 
+#### qBittorrent fails to start after an update
+
+qBittorrent occasionally refuses to start or comes back with a broken Web UI after its
+image is updated, because stale state in `qbittorrent/config/` (lock file, IPC socket,
+cached data) does not survive the version change.
+[qbittorrent/reset-qbittorrent-config.bat](qbittorrent/reset-qbittorrent-config.bat)
+fixes this by wiping that state while keeping the settings:
+
+```powershell
+.\qbittorrent\reset-qbittorrent-config.bat
+```
+
+It stops the container, deletes everything under `qbittorrent/config/` except
+`config/qBittorrent/config/qBittorrent.conf`, restores that file, and starts the
+container again. Because `qBittorrent.conf` is preserved, the Web UI password, ports,
+and download paths stay intact; torrents in `data/BT_backup` are **not** preserved and
+have to be re-added.
+
 ### Security notes
 
 - **Secrets live in `.env` files, never in compose.** [.gitignore](.gitignore) excludes
@@ -246,7 +264,7 @@ docker/
 ├── comfyui/                   # ComfyUI + FLUX.1-dev, shared models folder
 ├── filebrowser/
 ├── jackett/                   # gluetun + jackett + flaresolverr
-├── qbittorrent/
+├── qbittorrent/               # incl. reset-qbittorrent-config.bat
 ├── radarr/
 ├── seerr/
 ├── sonarr/
